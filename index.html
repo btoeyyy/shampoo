@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HerbalGlow Shampoo - ร้านยาสระผมสมุนไพร & ระบบจัดการหลังบ้าน</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <style>
+    @media print {
+      body * { visibility: hidden; }
+      #print-label-area, #print-label-area * { visibility: visible; }
+      #print-label-area { position: fixed; left: 0; top: 0; width: 100%; border: 2px solid #000; padding: 20px; }
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans">
+
+  <!-- Navbar -->
+  <nav class="bg-emerald-700 text-white shadow-md sticky top-0 z-10">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
+      <div class="font-bold text-xl tracking-wide">🌿 HerbalGlow Shampoo</div>
+      <div class="space-x-2">
+        <button onclick="switchTab('store')" id="btn-store" class="bg-white text-emerald-800 px-4 py-1.5 rounded-lg font-medium text-sm shadow">หน้าร้าน (Landing Page)</button>
+        <button onclick="switchTab('warehouse')" id="btn-warehouse" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-1.5 rounded-lg font-medium text-sm">ระบบหยิบ & แพ็คพัสดุ (<span id="order-count">0</span>)</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- TAB 1: LANDING PAGE & ORDER -->
+  <main id="tab-store" class="max-w-6xl mx-auto px-4 py-8">
+    <!-- Hero Section -->
+    <section class="bg-gradient-to-r from-emerald-600 to-teal-700 rounded-2xl text-white p-8 md:p-12 mb-10 shadow-lg">
+      <div class="max-w-2xl">
+        <span class="bg-emerald-800/60 text-emerald-100 text-xs uppercase tracking-wider px-3 py-1 rounded-full">สารสกัดธรรมชาติ 100%</span>
+        <h1 class="text-3xl md:text-5xl font-bold mt-4 leading-tight">ฟื้นฟูเส้นผมแข็งแรง ลดผมร่วงตั้งแต่ครั้งแรกที่ใช้</h1>
+        <p class="mt-4 text-emerald-100 text-lg">เลือกสูตรที่ใช่สำหรับสภาพหนังศีรษะของคุณ จัดส่งไว แพ็คอย่างดีถึงหน้าบ้าน</p>
+        <a href="#products-section" class="inline-block mt-6 bg-amber-400 hover:bg-amber-300 text-slate-900 font-bold px-6 py-3 rounded-xl shadow transition">เลือกซื้อสินค้าเลย</a>
+      </div>
+    </section>
+
+    <!-- Product Catalog from Google Sheet -->
+    <section id="products-section" class="mb-12">
+      <div class="flex justify-between items-end mb-6">
+        <div>
+          <h2 class="text-2xl font-bold text-slate-800">รายการสินค้า (ดึงข้อมูลจาก Google Sheet)</h2>
+          <p class="text-sm text-slate-500">รูปภาพดึงจากโฟลเดอร์ <code>/images/</code> ใน GitHub</p>
+        </div>
+        <span id="sheet-status" class="text-xs bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full">กำลังโหลดข้อมูล...</span>
+      </div>
+      <div id="product-grid" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
+    </section>
+
+    <!-- Checkout Form -->
+    <section class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200 max-w-2xl mx-auto">
+      <h3 class="text-xl font-bold mb-4 border-b pb-2">🛒 ฟอร์มสั่งซื้อสินค้า</h3>
+      <form id="order-form" class="space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-1">ชื่อ-นามสกุล ผู้รับ *</label>
+            <input type="text" id="cust-name" required placeholder="เช่น สมชาย ใจดี" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 outline-none" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">เบอร์โทรศัพท์ *</label>
+            <input type="tel" id="cust-phone" required placeholder="08X-XXX-XXXX" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 outline-none" />
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">ที่อยู่จัดส่ง (บ้านเลขที่ ตำบล อำเภอ จังหวัด รหัสไปรษณีย์) *</label>
+          <textarea id="cust-address" required rows="3" placeholder="99/9 หมู่ 1 ถ.สุขุมวิท แขวงคลองเตย เขตคลองเตย กรุงเทพฯ 10110" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 outline-none"></textarea>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="md:col-span-2">
+            <label class="block text-sm font-medium mb-1">เลือกสินค้า (SKU) *</label>
+            <select id="cust-sku" required class="w-full border rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-emerald-500 outline-none"></select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">จำนวน (ขวด) *</label>
+            <input type="number" id="cust-qty" min="1" value="1" required class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 outline-none" />
+          </div>
+        </div>
+        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow transition">ยืนยันคำสั่งซื้อ</button>
+      </form>
+    </section>
+  </main>
+
+  <!-- TAB 2: PICKING, PACKING & SHIPPING LABEL -->
+  <main id="tab-warehouse" class="max-w-6xl mx-auto px-4 py-8 hidden">
+    <h2 class="text-2xl font-bold mb-2">📦 ระบบหยิบสินค้า แพ็คพัสดุ และพิมพ์ใบจ่าหน้า</h2>
+    <p class="text-slate-500 text-sm mb-6">ตรวจสอบรายการ SKU หยิบสินค้าให้ตรงตามออเดอร์ กดยืนยันการแพ็ค และพิมพ์ใบจ่าหน้าพัสดุ</p>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Order List -->
+      <div class="lg:col-span-2 space-y-4" id="warehouse-orders"></div>
+
+      <!-- Shipping Label Preview -->
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 h-fit sticky top-20">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="font-bold text-lg">🏷️ ใบจ่าหน้าพัสดุ</h3>
+          <button onclick="window.print()" id="btn-print" disabled class="bg-slate-800 disabled:bg-slate-300 text-white text-xs px-3 py-2 rounded-lg font-medium">🖨️ พิมพ์ใบจ่าหน้า</button>
+        </div>
+        <div id="print-label-area" class="border-2 border-dashed border-slate-300 rounded-xl p-5 bg-slate-50 text-sm">
+          <p class="text-slate-400 text-center py-8">กดปุ่ม "แพ็คและสร้างใบจ่าหน้า" ที่รายการออเดอร์ด้านซ้าย</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // ลิงก์ CSV จาก Google Sheet ที่สร้างไว้ (เปลี่ยน ID ได้หากสร้างชีตใหม่)
+    const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/1xYOiZ8xBSNR--w218wPf3a5WZG4uv-ovHtmlur9BP30/export?format=csv";
+
+    // ข้อมูลสำรองกรณี Google Sheet ยังไม่ได้เปิดแชร์สาธารณะ
+    const FALLBACK_PRODUCTS = [
+      { SKU: "SHP-001", Product_Name: "Herbal Anti-Hair Loss Shampoo", Description: "แชมพูสมุนไพรลดผมร่วง บำรุงรากผมแข็งแรง ขนาด 300 มล.", Price: "290", Stock: "50", Image_Filename: "shampoo-herbal.jpg" },
+      { SKU: "SHP-002", Product_Name: "Keratin Repair & Smooth Shampoo", Description: "แชมพูเคราตินฟื้นฟูผมเสีย ลดชี้ฟู ขนาด 300 มล.", Price: "320", Stock: "45", Image_Filename: "shampoo-keratin.jpg" },
+      { SKU: "SHP-003", Product_Name: "Anti-Dandruff Cool Mint Shampoo", Description: "แชมพูสูตรเย็นขจัดรังแค ลดอาการคันหนังศีรษะ ขนาด 300 มล.", Price: "250", Stock: "60", Image_Filename: "shampoo-mint.jpg" }
+    ];
+
+    let products = [];
+    let orders = JSON.parse(localStorage.getItem("shampoo_orders") || "[]");
+
+    // โหลดข้อมูลจาก Google Sheet
+    function loadProducts() {
+      Papa.parse(SHEET_CSV_URL, {
+        download: true,
+        header: true,
+        skipEmptyLines: true,
+        complete: function(results) {
+          if (results.data && results.data.length > 0 && results.data[0].SKU) {
+            products = results.data;
+            document.getElementById("sheet-status").textContent = "✅ เชื่อมต่อ Google Sheet สำเร็จ (" + products.length + " SKUs)";
+          } else {
+            useFallback("ใช้ข้อมูลสำรอง (โปรดเปิดแชร์ Google Sheet เป็นสาธารณะ)");
+          }
+          renderProducts();
+        },
+        error: function() {
+          useFallback("ใช้ข้อมูลสำรอง (โปรดเปิดแชร์ Google Sheet เป็นสาธารณะ)");
+          renderProducts();
+        }
+      });
+    }
+
+    function useFallback(msg) {
+      products = FALLBACK_PRODUCTS;
+      const el = document.getElementById("sheet-status");
+      el.textContent = "⚠️ " + msg;
+      el.className = "text-xs bg-amber-100 text-amber-800 px-3 py-1 rounded-full";
+    }
+
+    function renderProducts() {
+      const grid = document.getElementById("product-grid");
+      const select = document.getElementById("cust-sku");
+      grid.innerHTML = "";
+      select.innerHTML = "";
+
+      products.forEach(p => {
+        // ดึงรูปจากโฟลเดอร์ images/ ใน GitHub (มีรูปสำรองอัตโนมัติหากยังไม่ได้อัปโหลดไฟล์รูป)
+        const imgPath = `images/${p.Image_Filename}`;
+        const fallbackImg = `https://placehold.co/400x300/10b981/ffffff?text=${encodeURIComponent(p.SKU)}`;
+
+        grid.innerHTML += `
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+            <img src="${imgPath}" onerror="this.onerror=null;this.src='${fallbackImg}';" alt="${p.Product_Name}" class="w-full h-48 object-cover bg-slate-100" />
+            <div class="p-5 flex-1 flex flex-col justify-between">
+              <div>
+                <div class="flex justify-between items-center mb-1">
+                  <span class="text-xs font-mono bg-slate-100 text-slate-600 px-2 py-0.5 rounded">SKU: ${p.SKU}</span>
+                  <span class="text-xs text-emerald-700 font-medium">คงเหลือ ${p.Stock} ชิ้น</span>
+                </div>
+                <h3 class="font-bold text-lg text-slate-800 mt-1">${p.Product_Name}</h3>
+                <p class="text-sm text-slate-500 mt-1">${p.Description}</p>
+              </div>
+              <div class="mt-4 pt-3 border-t flex justify-between items-center">
+                <span class="text-xl font-bold text-emerald-700">฿${p.Price}</span>
+                <button onclick="selectProduct('${p.SKU}')" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-semibold text-sm px-3 py-1.5 rounded-lg">สั่งซื้อสูตรนี้</button>
+              </div>
+            </div>
+          </div>
+        `;
+
+        select.innerHTML += `<option value="${p.SKU}">[${p.SKU}] ${p.Product_Name} - ฿${p.Price}</option>`;
+      });
+
+      // สร้างออเดอร์ตัวอย่าง 1 รายการหากยังไม่มีออเดอร์ เพื่อให้ทดสอบหยิบ/แพ็คได้ทันที
+      if (orders.length === 0 && products.length > 0) {
+        orders.push({
+          id: "ORD-" + Math.floor(1000 + Math.random() * 9000),
+          name: "นภัสสร รักสวย",
+          phone: "089-123-4567",
+          address: "123/45 คอนโดลุมพินี ถ.พระราม 4 แขวงคลองเตย เขตคลองเตย กรุงเทพฯ 10110",
+          sku: products[0].SKU,
+          productName: products[0].Product_Name,
+          qty: 2,
+          total: Number(products[0].Price) * 2,
+          picked: false,
+          packed: false,
+          createdAt: new Date().toLocaleString("th-TH")
+        });
+        saveOrders();
+      }
+      renderOrders();
+    }
+
+    function selectProduct(sku) {
+      document.getElementById("cust-sku").value = sku;
+      document.getElementById("order-form").scrollIntoView({ behavior: "smooth" });
+    }
+
+    document.getElementById("order-form").addEventListener("submit", function(e) {
+      e.preventDefault();
+      const sku = document.getElementById("cust-sku").value;
+      const qty = Number(document.getElementById("cust-qty").value);
+      const product = products.find(p => p.SKU === sku);
+
+      const newOrder = {
+        id: "ORD-" + Math.floor(1000 + Math.random() * 9000),
+        name: document.getElementById("cust-name").value,
+        phone: document.getElementById("cust-phone").value,
+        address: document.getElementById("cust-address").value,
+        sku: sku,
+        productName: product ? product.Product_Name : sku,
+        qty: qty,
+        total: product ? Number(product.Price) * qty : 0,
+        picked: false,
+        packed: false,
+        createdAt: new Date().toLocaleString("th-TH")
+      };
+
+      orders.unshift(newOrder);
+      saveOrders();
+      this.reset();
+      alert("✅ สั่งซื้อสำเร็จ! รหัสออเดอร์: " + newOrder.id + "\nระบบส่งข้อมูลไปยังหน้าหยิบและแพ็คสินค้าเรียบร้อยแล้ว");
+      switchTab("warehouse");
+    });
+
+    function saveOrders() {
+      localStorage.setItem("shampoo_orders", JSON.stringify(orders));
+      renderOrders();
+    }
+
+    function togglePick(index) {
+      orders[index].picked = !orders[index].picked;
+      if (!orders[index].picked) orders[index].packed = false;
+      saveOrders();
+    }
+
+    function packAndLabel(index) {
+      if (!orders[index].picked) {
+        alert("⚠️ กรุณาติ๊กยืนยัน 'หยิบสินค้าตาม SKU' ก่อนทำการแพ็คพัสดุ");
+        return;
+      }
+      orders[index].packed = true;
+      saveOrders();
+
+      const o = orders[index];
+      document.getElementById("btn-print").disabled = false;
+      document.getElementById("print-label-area").innerHTML = `
+        <div class="bg-white p-4 border-2 border-black text-black space-y-3">
+          <div class="flex justify-between items-center border-b-2 border-black pb-2">
+            <div>
+              <div class="font-bold text-base">HERBALGLOW EXPRESS</div>
+              <div class="text-xs">Order ID: <strong>${o.id}</strong></div>
+            </div>
+            <div class="border border-black px-2 py-1 font-mono font-bold text-sm">${o.sku}</div>
+          </div>
+          <div class="text-xs border-b border-slate-300 pb-2">
+            <strong>ผู้ส่ง (FROM):</strong> ร้าน HerbalGlow Shampoo คลังสินค้า กรุงเทพฯ 10110 โทร. 02-000-9999
+          </div>
+          <div class="py-1">
+            <div class="text-xs text-slate-600">ผู้รับ (TO):</div>
+            <div class="font-bold text-base">${o.name}</div>
+            <div class="font-semibold">โทร: ${o.phone}</div>
+            <div class="mt-1 leading-snug">${o.address}</div>
+          </div>
+          <div class="border-t-2 border-black pt-2 text-xs flex justify-between">
+            <span>รายการ: ${o.productName} (x${o.qty})</span>
+            <strong>ยอดสุทธิ: ฿${o.total}</strong>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderOrders() {
+      document.getElementById("order-count").textContent = orders.length;
+      const container = document.getElementById("warehouse-orders");
+      container.innerHTML = "";
+
+      orders.forEach((o, idx) => {
+        container.innerHTML += `
+          <div class="bg-white p-5 rounded-2xl shadow-sm border ${o.packed ? 'border-emerald-400 bg-emerald-50/30' : 'border-slate-200'}">
+            <div class="flex justify-between items-start">
+              <div>
+                <span class="font-mono font-bold text-emerald-700">${o.id}</span>
+                <span class="text-xs text-slate-400 ml-2">${o.createdAt}</span>
+                <h4 class="font-bold text-slate-800 mt-1">ผู้รับ: ${o.name} (${o.phone})</h4>
+                <p class="text-xs text-slate-500 mt-0.5">${o.address}</p>
+              </div>
+              <span class="text-xs px-2.5 py-1 rounded-full font-semibold ${o.packed ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
+                ${o.packed ? '✅ แพ็คพร้อมส่งแล้ว' : '⏳ รอหยิบและแพ็ค'}
+              </span>
+            </div>
+
+            <div class="mt-4 p-3 bg-slate-50 rounded-xl border border-slate-200 flex justify-between items-center">
+              <div>
+                <div class="text-xs text-slate-500">รายการที่ต้องหยิบ (Pick List)</div>
+                <div class="font-bold text-sm text-slate-800">[${o.sku}] ${o.productName} — จำนวน <span class="text-emerald-700 text-base">${o.qty}</span> ขวด</div>
+              </div>
+              <label class="flex items-center space-x-2 cursor-pointer select-none bg-white px-3 py-1.5 rounded-lg border">
+                <input type="checkbox" ${o.picked ? "checked" : ""} onchange="togglePick(${idx})" class="w-4 h-4 accent-emerald-600" />
+                <span class="text-xs font-semibold">หยิบสินค้าครบแล้ว</span>
+              </label>
+            </div>
+
+            <div class="mt-4 flex justify-end">
+              <button onclick="packAndLabel(${idx})" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2 rounded-lg shadow">
+                📦 ยืนยันแพ็คสินค้า & สร้างใบจ่าหน้าพัสดุ
+              </button>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    function switchTab(tab) {
+      document.getElementById("tab-store").classList.toggle("hidden", tab !== "store");
+      document.getElementById("tab-warehouse").classList.toggle("hidden", tab !== "warehouse");
+    }
+
+    loadProducts();
+  </script>
+</body>
+</html>
